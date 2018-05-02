@@ -9,7 +9,7 @@ set -xe
 export WORKSPACE=$PWD
 export http_proxy=$1
 export https_proxy=$1
-export HOST_FORWARDED_PORT=$3
+export HOST_FORWARDED_PORT=$2
 
 # Configuration for Gerrit access
 export GIT_ID=${3}

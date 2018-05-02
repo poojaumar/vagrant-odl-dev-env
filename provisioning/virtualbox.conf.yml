@@ -3,11 +3,11 @@ box: "tknerr/ubuntu1604-desktop"
 http_https_proxy: "http://one.proxy.att.com:8888"
 odl_dev_vm:
   host_name: odl-dev-vm
-  memory: 8192
+  memory: 4096
   cpus: 2
   provider_ip: "203.0.113.108"
-  forwarded_port: 8080
+  forwarded_port: 8081
 gerrit_parameters:
-  gerrit_id: poojaumar@gmail.com
+  gerrit_id: "poojaumar@gmail.com"
   gerrit_username: "Pooja Umar"
   gerrit_ssh_key_filename: "id_rsa_gerrit"
