@@ -23,11 +23,14 @@ cat << EOF | sudo tee -a /etc/hosts
 ${LOCAL_IP} $(hostname)
 EOF
 
+if [ ! -z "$http_proxy" ]
+then
 # Proxy related settings - apt-get
 cat << EOF | sudo tee -a /etc/apt/apt.conf
 Acquire::http::Proxy "$http_proxy";
 Acquire::https::Proxy "$https_proxy";
 EOF
+fi
 
 ################################################################################################################
 # Environment setup
@@ -58,17 +61,23 @@ mkdir $WORKSPACE/work; cd $WORKSPACE/work
 cd $WORKSPACE/work
 
 # Maven
+#export MAVEN_REPO_URL="http://mirror.its.dal.ca/apache/maven/maven-3/3.3.9/binaries"
+#export MAVEN_BINARY_TAR="apache-maven-3.3.9-bin.tar.gz"
+#export MAVEN_BINARY="apache-maven-3.3.9"
+export MAVEN_REPO_URL="http://mirror.its.dal.ca/apache/maven/maven-3/3.5.3/binaries"
+export MAVEN_BINARY_TAR="apache-maven-3.5.3-bin.tar.gz"
+export MAVEN_BINARY="apache-maven-3.5.3"
 sudo apt-get purge -y maven
-wget http://mirror.its.dal.ca/apache/maven/maven-3/3.3.9/binaries/apache-maven-3.3.9-bin.tar.gz
-tar -zxf apache-maven-3.3.9-bin.tar.gz
-sudo cp -R apache-maven-3.3.9 /usr/local
-sudo ln -s /usr/local/apache-maven-3.3.9/bin/mvn /usr/bin/mvn
+wget -q $MAVEN_REPO_URL/$MAVEN_BINARY_TAR
+tar -zxf $MAVEN_BINARY_TAR
+sudo cp -R $MAVEN_BINARY /usr/local
+sudo ln -s /usr/local/$MAVEN_BINARY/bin/mvn /usr/bin/mvn
 echo 'Unseting M2_HOME...'
 unset M2_HOME
 echo 'Exporting new M2_HOME...'
-echo "export M2_HOME=/usr/local/apache-maven-3.3.9" >> ~/.profile
+echo "export M2_HOME=/usr/local/$MAVEN_BINARY" >> ~/.profile
 echo "export MAVEN_OPTS='-Xmx1048m -XX:MaxPermSize=512m'" >> ~/.profile
-echo "export PATH=/usr/local/apache-maven-3.3.9/bin:$PATH" >> ~/.profile
+echo "export PATH=/usr/local/$MAVEN_BINARY/bin:$PATH" >> ~/.profile
 
 source ~/.profile
 
@@ -78,9 +87,8 @@ echo "Maven is on version `mvn --version`"
 echo "ODL Maven settings.xml..."
 mkdir -p /home/vagrant/.m2/
 wget -q -O - https://raw.githubusercontent.com/opendaylight/odlparent/master/settings.xml > /home/vagrant/.m2/settings.xml
-sudo -s
-mkdir -p /root/.m2/
-wget -q -O - https://raw.githubusercontent.com/opendaylight/odlparent/master/settings.xml > /root/.m2/settings.xml
+sudo -s mkdir -p /root/.m2/
+wget -q -O - https://raw.githubusercontent.com/opendaylight/odlparent/master/settings.xml | sudo tee -a /root/.m2/settings.xml
 
 echo "Cloning OpenDaylight repositories..."
 git clone https://github.com/opendaylight/odlparent.git
@@ -90,29 +98,26 @@ git clone https://github.com/opendaylight/controller.git -b stable/oxygen
 cd odlparent
 #git checkout -b boron remotes/origin/stable/boron
 echo 'Compiling odlparent...'
-mvn clean install -DskipTests
+mvn clean install -DskipTests -q
 cd ..
 cd yangtools
 #git checkout -b boron remotes/origin/stable/boron
 echo 'Compiling yangtools...'
-mvn clean install -DskipTests
+mvn clean install -DskipTests -q
 cd ..
 cd controller
 #git checkout -b boron remotes/origin/stable/boron
 echo 'Compiling controller...'
-mvn clean install -DskipTests
+mvn clean install -DskipTests -q
 cd ..
 
 echo "**** VM setup successfully! *** "
 echo "To create your ODL application you should execute the following command and set requested properties..."
 
-#echo "mvn archetype:generate \
-#-DarchetypeGroupId=org.opendaylight.controller \
-#-DarchetypeArtifactId=opendaylight-startup-archetype \
-#-DarchetypeVersion=1.2.0-Boron \
-#-DarchetypeRepository=http://nexus.opendaylight.org/content/repositories/opendaylight.release/ -DarchetypeCatalog=http://nexus.opendaylight.org/content/repositories/opendaylight.release/archetype-catalog.xml"
-
 echo "mvn archetype:generate \
 -DarchetypeGroupId=org.opendaylight.controller \
 -DarchetypeArtifactId=opendaylight-startup-archetype \
--DarchetypeRepository=https://nexus.opendaylight.org/content/repositories/opendaylight.release/ -DarchetypeCatalog=remote -DarchetypeVersion=1.6.0"
+-DarchetypeRepository=https://nexus.opendaylight.org/content/repositories/opendaylight.snapshot/ -DarchetypeCatalog=remote -DarchetypeVersion=1.6.0-SNAPSHOT"
+
+echo "Follow link: http://docs.opendaylight.org/en/stable-oxygen/developer-guide/developing-apps-on-the-opendaylight-controller.html"
+
